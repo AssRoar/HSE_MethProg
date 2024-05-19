@@ -4,50 +4,52 @@
 #include <fstream>
 #include <chrono>
 #include <map>
+
 class Lab2 {
     struct Elements {
         std::string date;
         size_t win;
         size_t number;
         size_t cost;
-        friend bool operator== (const Elements& c1, const Elements& c2) {
-            if (c1.date == c2.date) {
-                if (c1.win == c2.win) {
-                    if (c1.number == c1.number) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-        friend bool operator >(const Elements& c1, const Elements& c2) {
-            if (std::strcmp(c1.date.c_str(), c2.date.c_str()) == -1) {
-                return false;
-            }
-            if (std::strcmp(c1.date.c_str(), c2.date.c_str()) == 1) {
-                return true;
-            }
-            if (std::strcmp(c1.date.c_str(), c2.date.c_str()) == 0) {
-                if (c1.win < c2.win) {
+        
+    };
+    friend bool operator== (const Elements& c1, const Elements& c2) {
+        if (c1.date == c2.date) {
+            if (c1.win == c2.win) {
+                if (c1.number == c1.number) {
                     return true;
                 }
-                if (c1.win > c2.win) {
+            }
+        }
+        return false;
+    }
+    friend bool operator >(const Elements& c1, const Elements& c2) {
+        if (std::strcmp(c1.date.c_str(), c2.date.c_str()) == -1) {
+            return false;
+        }
+        if (std::strcmp(c1.date.c_str(), c2.date.c_str()) == 1) {
+            return true;
+        }
+        if (std::strcmp(c1.date.c_str(), c2.date.c_str()) == 0) {
+            if (c1.win < c2.win) {
+                return true;
+            }
+            if (c1.win > c2.win) {
+                return false;
+            }
+            if (c1.win == c2.win) {
+                if (c1.number > c2.number) {
+                    return true;
+                }
+                if (c1.number < c2.number) {
                     return false;
                 }
-                if (c1.win == c2.win) {
-                    if (c1.number > c2.number) {
-                        return true;
-                    }
-                    if (c1.number < c2.number) {
-                        return false;
-                    }
-                    if (c1.number == c2.number) {
-                        return false;
-                    }
+                if (c1.number == c2.number) {
+                    return false;
                 }
             }
         }
-    };
+    }
     friend bool operator <(const Elements& c1, const Elements& c2) {
         if (c1 == c2) {
             return false;
@@ -72,6 +74,7 @@ class Lab2 {
 
 public:
     std::multimap<std::string, Lab2::Elements> dataMap;
+    std::unordered_map<std::string, std::vector<Elements> > dateHashTable;
     std::string filename;
     Lab2() = default;
     Lab2(std::string namefile);
@@ -169,8 +172,17 @@ public:
 
         return res;
     }
+
+    std::vector<Lab2::Elements> hashSearch(std::string date) {
+    if (dateHashTable.find(date) != dateHashTable.end()) {
+        return dateHashTable[date];
+    } else {
+        return std::vector<Elements>();  // Return empty vector if not found
+    }
+}
     ~Lab2() = default;
 };
+
 Lab2::Lab2(std::string namefile)
 {
     std::ifstream inf(namefile);
@@ -178,7 +190,7 @@ Lab2::Lab2(std::string namefile)
 
     if (!inf.is_open())
     {
-        std::cerr << "The file could not be opened for reading!\n";
+        std::cerr << "The file (" << namefile << ")could not be opened for reading!\n";
     }
     std::string s;
     while (std::getline(inf, s)) {
@@ -242,37 +254,54 @@ Lab2::Lab2(std::string namefile)
         obj.win = std::stoi(sum.c_str());
         data.push_back(obj);
         dataMap.insert(make_pair(date,obj));
+        dateHashTable[obj.date].push_back(obj);
     }
     inf.close();
 }
 
 int main() {
-    std::string m[7] = { "100000.txt","200000.txt","300000.txt","400000.txt","500000.txt","600000.txt","1000000.txt" };
-    std::string m1[7] = { "heapSort100000.txt","heapSort200000.txt","heapSort300000.txt","heapSort400000.txt","heapSort500000.txt","heapSort600000.txt","heapSort1000000.txt" };
-    for (int i = 0; i < 7; ++i) {
-        Lab2 v(m[i%7]);
+    std::string m[6] = { "100000.txt","200000.txt","300000.txt","400000.txt","500000.txt","600000.txt" };
+    std::string m1[6] = { "HeapSort'ed_100000.txt","HeapSort'ed_200000.txt","HeapSort'ed_300000.txt","HeapSort'ed_400000.txt","HeapSort'ed_500000.txt","HeapSort'ed_600000.txt" };
+    for (int i = 0; i < 6; ++i) {
+        Lab2 v(m[i%6]);
+        std::cout << "________________\n";
         auto begin = std::chrono::steady_clock::now();
         v.LinearSearch("1999/04/14");
         auto end = std::chrono::steady_clock::now();
         auto elapsed_ms = std::chrono::duration_cast<std::chrono::microseconds>(end - begin);
         std::cout << "The time of linear search " << m[i % 7] << ": " << elapsed_ms.count() << " mc\n";
-        Lab2 v1(m1[i%7]);
+
+
+
+        Lab2 v1(m1[i%6]);
         begin = std::chrono::steady_clock::now();
         v1.binarySearch("1999/04/14");
         end = std::chrono::steady_clock::now();
         elapsed_ms = std::chrono::duration_cast<std::chrono::microseconds>(end - begin);
         std::cout << "The time of binary search in sorted arrange " << m[i % 7] << ": " << elapsed_ms.count() << " mc\n";
+
+
+
         begin = std::chrono::steady_clock::now();
         v.heapSort();
         v.binarySearch("1999/04/14");
         end = std::chrono::steady_clock::now();
         elapsed_ms = std::chrono::duration_cast<std::chrono::microseconds>(end - begin);
         std::cout << "The time of binary search in unsorted arrange " << m[i % 7] << ": " << elapsed_ms.count() << " mc\n";
-        Lab2 v2(m[i % 7]);
+
+
+
+        Lab2 v2(m[i % 6]);
         begin = std::chrono::steady_clock::now();
         v2.dataMap.equal_range("1999/04/14");
         end = std::chrono::steady_clock::now();
         elapsed_ms = std::chrono::duration_cast<std::chrono::microseconds>(end - begin);
         std::cout << "The time of multimap " << m[i % 7] << ": " << elapsed_ms.count() << " mc\n";
+
+        begin = std::chrono::steady_clock::now();
+        v2.hashSearch("1999/04/14");
+        end = std::chrono::steady_clock::now();
+        elapsed_ms = std::chrono::duration_cast<std::chrono::microseconds>(end - begin);
+        std::cout << "The time of hash-table search " << m[i % 7] << ": " << elapsed_ms.count() << " mc\n";
     }
 }
